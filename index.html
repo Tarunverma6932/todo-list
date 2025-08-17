@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced To-Do List</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      margin-top: 50px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 600px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    input[type="text"], select, input[type="date"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    li {
+      display: flex;
+      flex-direction: column;
+      background: #f1f1f1;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: #888;
+    }
+
+    .meta {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .actions button {
+      margin-left: 5px;
+      background-color: #ddd;
+      color: #333;
+    }
+
+    .actions button:hover {
+      background-color: #bbb;
+    }
+
+    .remove-completed {
+      margin-top: 10px;
+      background-color: #e74c3c;
+    }
+
+    .remove-completed:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📝 Advanced To-Do List</h2>
+    <div class="input-group">
+      <input type="text" id="taskInput" placeholder="Task description..." />
+      <select id="categoryInput">
+        <option value="General">General</option>
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+        <option value="Shopping">Shopping</option>
+      </select>
+      <input type="date" id="dateInput" />
+      <button onclick="addTask()">Add</button>
+    </div>
+    <ul id="taskList"></ul>
+    <button class="remove-completed" onclick="removeCompleted()">Remove Completed</button>
+  </div>
+
+  <script>
+    const taskList = document.getElementById('taskList');
+
+    function saveTasks() {
+      const tasks = [];
+      taskList.querySelectorAll('li').forEach(li => {
+        const checkbox = li.querySelector('input[type="checkbox"]');
+        const span = li.querySelector('span');
+        const category = li.dataset.category;
+        const dueDate = li.dataset.dueDate;
+        tasks.push({
+          text: span.textContent,
+          completed: checkbox.checked,
+          category,
+          dueDate
+        });
+      });
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
+
+    function loadTasks() {
+      const saved = JSON.parse(localStorage.getItem('tasks') || '[]');
+      saved.forEach(task => {
+        createTask(task.text, task.category, task.dueDate, task.completed);
+      });
+    }
+
+    function addTask() {
+      const text = document.getElementById('taskInput').value.trim();
+      const category = document.getElementById('categoryInput').value;
+      const dueDate = document.getElementById('dateInput').value;
+      if (text === '') return;
+      createTask(text, category, dueDate, false);
+      document.getElementById('taskInput').value = '';
+      document.getElementById('dateInput').value = '';
+      saveTasks();
+    }
+
+    function createTask(text, category, dueDate, completed) {
+      const li = document.createElement('li');
+      li.dataset.category = category;
+      li.dataset.dueDate = dueDate;
+
+      const header = document.createElement('div');
+      header.className = 'task-header';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = completed;
+
+      const span = document.createElement('span');
+      span.textContent = text;
+      if (completed) span.classList.add('completed');
+
+      checkbox.onchange = () => {
+        span.classList.toggle('completed', checkbox.checked);
+        saveTasks();
+      };
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = () => {
+        const newText = prompt('Edit task:', span.textContent);
+        if (newText !== null) {
+          span.textContent = newText;
+          saveTasks();
+        }
+      };
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.onclick = () => {
+        li.remove();
+        saveTasks();
+      };
+
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+
+      header.appendChild(checkbox);
+      header.appendChild(span);
+      header.appendChild(actions);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = `📂 ${category} | 📅 ${dueDate || 'No due date'}`;
+
+      li.appendChild(header);
+      li.appendChild(meta);
+      taskList.appendChild(li);
+    }
+
+    function removeCompleted() {
+      taskList.querySelectorAll('li').forEach(li => {
+        const checkbox = li.querySelector('input[type="checkbox"]');
+        if (checkbox.checked) li.remove();
+      });
+      saveTasks();
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>
